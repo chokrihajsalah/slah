@@ -264,7 +264,7 @@ details.more h2{font:600 14px var(--display);letter-spacing:.06em;text-transform
       <label>Puissance pompe (test)<select data-k="puissance"><option value="">—</option><option value="0.5">0,5 HP</option><option value="0.75">0,75 HP</option><option value="1">1 HP</option><option value="1.5">1,5 HP</option><option value="2">2 HP</option><option value="3">3 HP</option><option value="4">4 HP</option><option value="5.5">5,5 HP</option><option value="7.5">7,5 HP</option><option value="10">10 HP</option><option value="12.5">12,5 HP</option><option value="15">15 HP</option><option value="20">20 HP</option><option value="25">25 HP</option><option value="30">30 HP</option><option value="40">40 HP</option><option value="50">50 HP</option></select></label>
       <label>Tension<select data-k="tension"><option value="">—</option><option value="230">230 V (mono)</option><option value="380">380 V (tri)</option></select></label>
       <p class="hint full" data-sugg style="margin:-4px 0 0"></p>
-      <label>Immersion<span class="unit"><input data-k="immersion" inputmode="decimal"><span>m</span></span></label>
+      <label>Profondeur pompe d’essai<span class="unit"><input data-k="immersion" inputmode="decimal"><span>m</span></span></label>
       <label>Débit de test<span class="unit"><input data-k="debitTest" inputmode="decimal"><span>l/s</span></span></label>
       <label>Rabattement<span class="unit"><input data-k="rabattement" inputmode="decimal"><span>m</span></span></label>
       <label>Temps d'initialisation<span class="unit"><input data-k="tempsInit" inputmode="decimal"><span>mn</span></span></label>
@@ -599,6 +599,7 @@ async function buildPdf(){
     if(isFinite(S)){page.drawLine({start:{x:wx-4,y:H-Y(S)},end:{x:wx+ww+4,y:H-Y(S)},thickness:1.2,color:teal});labels.push({d:S,t:'Statique '+fmt(S)+' m',c:teal})}
     if(isFinite(D)){page.drawLine({start:{x:wx-4,y:H-Y(D)},end:{x:wx+ww+4,y:H-Y(D)},thickness:1.2,color:navy,dashArray:[3,2]});labels.push({d:D,t:'Dynamique '+fmt(D)+' m',c:navy})}
     if(isFinite(I)){box(wx+3,Y(I)-6,9,12,{color:grey});labels.push({d:I,t:'Pompe essai '+fmt(I)+' m',c:grey})}
+    else T('Pompe d’essai : profondeur non saisie',x,yy+h+10,reg,7,orange);
     if(isFinite(PP)){box(wx+ww-12,Y(PP)-6,9,12,{color:orange});labels.push({d:PP,t:'Pompe conseillée '+fmt(PP)+' m',c:orange})}
     labels.push({d:P,t:'Fond '+fmt(P)+' m',c:grey});
     // étiquettes sans chevauchement
