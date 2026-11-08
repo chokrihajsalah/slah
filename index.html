@@ -128,7 +128,7 @@ textarea{resize:vertical;min-height:70px}
     <div id="preview"><p class="hint">Touchez « Aperçu » pour voir le rapport.</p></div>
     <p id="status" role="status"></p>
     <p class="hint" id="shareHint">Après « Envoyer le PDF », choisissez WhatsApp ou Gmail dans le menu de partage. Sur Android, le PDF est enregistré dans Téléchargements : ouvrez WhatsApp, touchez le trombone, puis Document.</p>
-    <div class="row" id="resetRow"><button type="button" id="saveRapport">Enregistrer dans l’historique</button><button type="button" id="rapportToFac">Facturer cet essai</button><button class="ghost danger" id="reset" type="button">Nouveau rapport vide</button></div>
+    <div class="row" id="resetRow"><button type="button" id="saveRapport">Enregistrer</button><button type="button" id="rapportToFac">Facturer cet essai</button><button class="ghost danger" id="reset" type="button">Nouveau rapport vide</button></div>
   </section>
 </main>
 <main class="wrap" id="tab-doc" hidden>
@@ -680,7 +680,7 @@ function renderDoc(){
   </section>
   <section class="sheet"><h2>Actions</h2>
     <div class="row">
-      <button type="button" class="primary" id="docSave">Enregistrer dans l’historique</button>
+      <button type="button" class="primary" id="docSave">Enregistrer</button>
       ${isF?'':'<button type="button" id="docToFac">Transformer en facture</button>'}
       <button type="button" id="docNew">Nouveau ${isF?'facture':'devis'}</button>
     </div>
