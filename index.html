@@ -81,7 +81,7 @@ textarea{resize:vertical;min-height:70px}
 .badge.warn{background:color-mix(in srgb,#d88a00 18%,transparent);color:#a86a00}
 .badge.bad{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
 .subtabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px}
-.subtabs button{flex:1;border:0;background:transparent;min-height:40px;font-size:14px;color:var(--muted);padding:0 6px}
+.subtabs button{flex:1;border:0;background:transparent;min-height:40px;font-size:13px;color:var(--muted);padding:0 6px}
 .subtabs button[aria-selected=true]{background:var(--brand);color:#fff}
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .kpi{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:2px;background:var(--input);min-width:0}
@@ -168,7 +168,7 @@ textarea{resize:vertical;min-height:70px}
   <div id="docForm" style="display:flex;flex-direction:column;gap:16px"></div>
 </main>
 <main class="wrap" id="tab-fin" hidden>
-  <div class="subtabs" id="finSub" role="tablist"><button data-sub="tdb" role="tab">Tableau de bord</button><button data-sub="enc" role="tab">À encaisser</button><button data-sub="dep" role="tab">Dépenses</button></div>
+  <div class="subtabs" id="finSub" role="tablist"><button data-sub="tdb" role="tab">Bilan</button><button data-sub="enc" role="tab">À encaisser</button><button data-sub="rec" role="tab">Recettes</button><button data-sub="dep" role="tab">Dépenses</button></div>
   <section class="sheet" id="finPerBox"><div class="grid">
     <label>Période<select id="finPer"><option value="mois">Mois</option><option value="annee">Année</option><option value="tout">Tout</option></select></label>
     <label id="finMonthLbl">Mois<input type="month" id="finMonth"></label></div></section>
@@ -177,6 +177,7 @@ textarea{resize:vertical;min-height:70px}
     <section class="sheet"><h2>Chiffres de la période</h2><div class="kpis" id="tdbKpi"></div></section>
     <section class="sheet"><h2>À suivre</h2><div class="kpis" id="tdbAlert"></div></section>
     <section class="sheet"><h2>6 derniers mois</h2><div id="tdbChart"></div></section>
+    <section class="sheet"><h2>Recettes sans facture par service</h2><div id="tdbRec"></div></section>
     <section class="sheet"><h2>Dépenses par catégorie</h2><div id="tdbCats"></div></section>
   </div>
   <div id="finEnc" hidden style="display:flex;flex-direction:column;gap:12px">
@@ -184,6 +185,13 @@ textarea{resize:vertical;min-height:70px}
       <label class="check"><input type="checkbox" id="encAll"> Afficher aussi les factures payées</label>
       <p class="hint" style="margin:0">Touche « Paiements et relance » pour noter un paiement (acompte, solde) ou envoyer un rappel WhatsApp.</p></section>
     <div id="encList" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+  <div id="finRec" hidden style="display:flex;flex-direction:column;gap:12px">
+    <section class="sheet"><h2>Recettes sans facture : <span id="recTot"></span></h2>
+      <p class="hint" style="margin:0">Argent reçu pour un service non facturé (dépannage, petite réparation, vente au comptoir…).</p>
+      <button type="button" class="primary" id="recAdd">+ Nouvelle recette</button></section>
+    <section class="sheet" id="recForm" hidden></section>
+    <div id="recList" style="display:flex;flex-direction:column;gap:10px"></div>
   </div>
   <div id="finDep" hidden style="display:flex;flex-direction:column;gap:12px">
     <section class="sheet"><h2>Dépenses de la période : <span id="depTot"></span></h2>
@@ -870,7 +878,7 @@ $('exportBtn').onclick=async()=>{
 };
 $('importFile').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
-  try{const x=JSON.parse(await f.text());if(x.settings)S=Object.assign({...SET_DEF},x.settings);if(x.docs&&Array.isArray(x.docs.hist))DB=x.docs;if(x.rapport&&x.rapport.forages)state=x.rapport;if(!Array.isArray(DB.dep))DB.dep=[];if(x.photos)for(const k in x.photos){try{await PH.set(k,x.photos[k])}catch(e){}}
+  try{const x=JSON.parse(await f.text());if(x.settings)S=Object.assign({...SET_DEF},x.settings);if(x.docs&&Array.isArray(x.docs.hist))DB=x.docs;if(x.rapport&&x.rapport.forages)state=x.rapport;if(!Array.isArray(DB.dep))DB.dep=[];if(!Array.isArray(DB.rec))DB.rec=[];if(x.photos)for(const k in x.photos){try{await PH.set(k,x.photos[k])}catch(e){}}
     saveS();saveD();save();bindTop();renderForages();renderSet();$('setStatus').textContent='Sauvegarde importée : '+DB.hist.length+' document(s).'}
   catch(err){$('setStatus').textContent='Fichier invalide.'}
   e.target.value='';
@@ -989,6 +997,8 @@ async function docSend(){
 
 /* ================= Finances : paiements, dépenses, tableau de bord ================= */
 if(!Array.isArray(DB.dep))DB.dep=[];
+if(!Array.isArray(DB.rec))DB.rec=[];
+const RECCATS=['Dépannage','Réparation / rebobinage','Essai de débit','Installation','Vente de matériel','Entretien','Autre'];
 const DEPCATS=['Achat matériel / pièces','Carburant / transport','Sous-traitance','Salaire / avance technicien','Outillage','Loyer / charges','Téléphone / internet','Impôts / taxes','Autre'];
 const MODES=['Espèces','Chèque','Virement','Traite','Autre'];
 const MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
@@ -1081,21 +1091,23 @@ function periodRange(){
 const inP=(d,r)=>!!d&&d>=r.from&&d<r.to;
 function factures(){return DB.hist.filter(h=>h.type==='facture')}
 function stats(r){
-  let caTTC=0,caHT=0,tva=0,enc=0,dep=0;const cats={};
+  let caTTC=0,caHT=0,tva=0,enc=0,dep=0,rec=0;const cats={},rcats={};
   factures().forEach(h=>{if(inP(h.date,r)){const t=totals(h.data);caTTC+=t.ttc;caHT+=t.net;tva+=t.tva}
     (h.paiements||[]).forEach(p=>{if(inP(p.date,r))enc+=n3(p.montant)})});
   DB.dep.forEach(d=>{if(inP(d.date,r)){dep+=n3(d.montant);cats[d.cat]=(cats[d.cat]||0)+n3(d.montant)}});
-  return {caTTC,caHT,tva,enc,dep,cats,res:caHT-dep,treso:enc-dep};
+  DB.rec.forEach(d=>{if(inP(d.date,r)){rec+=n3(d.montant);rcats[d.cat]=(rcats[d.cat]||0)+n3(d.montant)}});
+  const ca=caHT+rec,encT=enc+rec;
+  return {caTTC,caHT,tva,enc:encT,encFac:enc,rec,ca,dep,cats,rcats,res:ca-dep,treso:encT-dep};
 }
 
 // ---- rendu de l’onglet Finances
 let FINSUB='tdb';
 function renderFin(){
   document.querySelectorAll('#finSub button').forEach(b=>b.setAttribute('aria-selected',b.dataset.sub===FINSUB?'true':'false'));
-  $('finTdb').hidden=FINSUB!=='tdb';$('finEnc').hidden=FINSUB!=='enc';$('finDep').hidden=FINSUB!=='dep';
+  $('finTdb').hidden=FINSUB!=='tdb';$('finEnc').hidden=FINSUB!=='enc';$('finDep').hidden=FINSUB!=='dep';$('finRec').hidden=FINSUB!=='rec';
   $('finMonthLbl').hidden=$('finPer').value!=='mois';
   $('finPerBox').hidden=FINSUB==='enc';
-  if(FINSUB==='tdb')renderTdb();if(FINSUB==='enc')renderEnc();if(FINSUB==='dep')renderDep();
+  if(FINSUB==='tdb')renderTdb();if(FINSUB==='enc')renderEnc();if(FINSUB==='dep')renderDep();if(FINSUB==='rec')renderRec();
 }
 function kpi(lbl,val,cls,sub){return `<div class="kpi ${cls||''}"><span>${lbl}</span><b>${val}</b>${sub?`<small>${sub}</small>`:''}</div>`}
 function renderTdb(){
@@ -1104,10 +1116,10 @@ function renderTdb(){
   const reste=open.reduce((a,x)=>a+x.p.reste,0),late=open.filter(x=>x.p.late);
   const dv=DB.hist.filter(h=>h.type==='devis'&&h.statut!=='accepte');
   $('tdbKpi').innerHTML=
-    kpi('Chiffre d’affaires HT',money(s.caHT)+' DT','main','TTC '+money(s.caTTC)+' DT')+
-    kpi('Encaissé',money(s.enc)+' DT','ok')+
+    kpi('Chiffre d’affaires',money(s.ca)+' DT','main','factures HT '+money(s.caHT)+' DT + sans facture '+money(s.rec)+' DT')+
+    kpi('Encaissé',money(s.enc)+' DT','ok','factures '+money(s.encFac)+' + sans facture '+money(s.rec))+
     kpi('Dépenses',money(s.dep)+' DT','bad')+
-    kpi('Résultat estimé',money(s.res)+' DT',s.res>=0?'ok':'bad','CA HT − dépenses')+
+    kpi('Résultat estimé',money(s.res)+' DT',s.res>=0?'ok':'bad','chiffre d’affaires − dépenses')+
     kpi('Trésorerie de la période',money(s.treso)+' DT',s.treso>=0?'':'bad','encaissé − dépenses')+
     kpi('TVA collectée',money(s.tva)+' DT','','sur les factures de la période');
   $('tdbAlert').innerHTML=
@@ -1116,12 +1128,14 @@ function renderTdb(){
   // graphique 6 derniers mois
   const now=new Date(),months=[];
   for(let i=5;i>=0;i--){const d=new Date(Date.UTC(now.getFullYear(),now.getMonth()-i,1)),m=d.toISOString().slice(0,7),e=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)).toISOString().slice(0,10);
-    const st=stats({from:m+'-01',to:e});months.push({l:MOIS[d.getUTCMonth()],ca:st.caHT,enc:st.enc,dep:st.dep})}
+    const st=stats({from:m+'-01',to:e});months.push({l:MOIS[d.getUTCMonth()],ca:st.ca,enc:st.enc,dep:st.dep})}
   const max=Math.max(1,...months.flatMap(m=>[m.ca,m.enc,m.dep]));
   $('tdbChart').innerHTML=`<div class="chart">${months.map(m=>`<div class="col" title="${m.l} : CA ${money(m.ca)} · encaissé ${money(m.enc)} · dépenses ${money(m.dep)}"><div class="bars">
     <i class="b-ca" style="height:${m.ca/max*100}%"></i><i class="b-enc" style="height:${m.enc/max*100}%"></i><i class="b-dep" style="height:${m.dep/max*100}%"></i></div><span>${m.l}</span></div>`).join('')}</div>
-    <div class="legend"><span><i class="b-ca"></i>CA HT</span><span><i class="b-enc"></i>Encaissé</span><span><i class="b-dep"></i>Dépenses</span></div>`;
+    <div class="legend"><span><i class="b-ca"></i>Chiffre d’affaires</span><span><i class="b-enc"></i>Encaissé</span><span><i class="b-dep"></i>Dépenses</span></div>`;
   const cats=Object.entries(s.cats).sort((a,b)=>b[1]-a[1]);
+  const rc=Object.entries(s.rcats).sort((a,b)=>b[1]-a[1]);
+  $('tdbRec').innerHTML=rc.length?rc.map(([c,v])=>`<div class="catrow"><span>${esc(c)}</span><span class="catbar"><i style="width:${v/s.rec*100}%;background:var(--ok)"></i></span><b>${money(v)}</b></div>`).join(''):'<p class="hint">Aucune recette sans facture sur la période.</p>';
   $('tdbCats').innerHTML=cats.length?cats.map(([c,v])=>`<div class="catrow"><span>${esc(c)}</span><span class="catbar"><i style="width:${v/s.dep*100}%"></i></span><b>${money(v)}</b></div>`).join(''):'<p class="hint">Aucune dépense sur la période.</p>';
 }
 function renderEnc(){
@@ -1187,6 +1201,48 @@ function renderDep(){
     box.appendChild(d);
   });
 }
+// ---- recettes sans facture
+function recForm(rc){
+  const e=rc||{id:uid(),date:today(),montant:'',cat:RECCATS[0],client:'',mode:'Espèces',note:'',isNew:true};
+  const f=$('recForm');f.hidden=false;
+  f.innerHTML=`<h2>${e.isNew?'Nouvelle recette':'Modifier la recette'}</h2>
+   <div class="grid">
+    <label>Date<input type="date" data-r="date" value="${esc(e.date)}"></label>
+    <label>Montant reçu<span class="unit"><input data-r="montant" inputmode="decimal" value="${esc(String(e.montant).replace('.',','))}"><span>DT</span></span></label>
+    <label>Service<select data-r="cat">${RECCATS.map(c=>`<option${c===e.cat?' selected':''}>${esc(c)}</option>`).join('')}</select></label>
+    <label>Mode<select data-r="mode">${MODES.map(m=>`<option${m===e.mode?' selected':''}>${m}</option>`).join('')}</select></label>
+    <label class="full">Client (facultatif)<input data-r="client" value="${esc(e.client)}" list="dlRecCli"></label>
+    <label class="full">Note<input data-r="note" value="${esc(e.note)}" placeholder="ex. changement condensateur, puits à Agareb"></label>
+    <div class="full row"><button type="button" class="primary" id="recSave">Enregistrer la recette</button><button type="button" id="recCancel">Annuler</button></div>
+   </div>
+   <datalist id="dlRecCli">${[...new Set([...DB.rec.map(d=>d.client),...DB.hist.map(h=>h.client&&h.client.nom)].filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
+  $('recCancel').onclick=()=>{f.hidden=true};
+  $('recSave').onclick=()=>{
+    const g=k=>f.querySelector('[data-r='+k+']').value;
+    const m=n3(g('montant'));if(!(m>0)){f.querySelector('[data-r=montant]').focus();return}
+    Object.assign(e,{date:g('date')||today(),montant:String(Math.round(m*1000)/1000),cat:g('cat'),mode:g('mode'),client:g('client').trim(),note:g('note').trim()});
+    const wasNew=e.isNew;delete e.isNew;if(wasNew)DB.rec.push(e);saveD();
+    f.hidden=true;renderRec();$('finStatus').textContent='Recette enregistrée : '+money(m)+' DT';
+  };
+  f.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function renderRec(){
+  const r=periodRange(),box=$('recList');box.textContent='';
+  const items=DB.rec.filter(d=>inP(d.date,r)).sort((a,b)=>b.date.localeCompare(a.date));
+  $('recTot').textContent=money(items.reduce((a,d)=>a+n3(d.montant),0))+' DT';
+  if(!items.length){box.innerHTML='<p class="hint">Aucune recette sans facture sur la période.</p>';return}
+  items.forEach(rc=>{
+    const d=document.createElement('div');d.className='hitem';
+    d.innerHTML=`<div><b style="color:var(--ok)">+ ${money(n3(rc.montant))} DT</b> <span class="hint">· ${esc(frDate(rc.date))} · ${esc(rc.mode)}</span><br>${esc(rc.cat)}${rc.client?' · '+esc(rc.client):''}${rc.note?'<br><span class="hint">'+esc(rc.note)+'</span>':''}</div>
+      <div class="row"><button type="button" class="ghost" data-a="edit">Modifier</button><button type="button" class="ghost danger" data-a="del">Suppr.</button></div>`;
+    d.querySelector('[data-a=edit]').onclick=()=>recForm(rc);
+    const del=d.querySelector('[data-a=del]');
+    del.onclick=()=>{if(!del.dataset.armed){del.dataset.armed='1';del.textContent='Confirmer ?';setTimeout(()=>{if(del.isConnected){delete del.dataset.armed;del.textContent='Suppr.'}},3000);return}
+      DB.rec=DB.rec.filter(x=>x!==rc);saveD();renderRec()};
+    box.appendChild(d);
+  });
+}
+$('recAdd').onclick=()=>recForm();
 document.querySelectorAll('#finSub button').forEach(b=>b.onclick=()=>{FINSUB=b.dataset.sub;renderFin()});
 $('finPer').onchange=renderFin;$('finMonth').onchange=renderFin;$('encAll').onchange=renderEnc;
 $('depAdd').onclick=()=>depForm();
