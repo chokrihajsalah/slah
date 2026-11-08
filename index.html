@@ -80,6 +80,23 @@ textarea{resize:vertical;min-height:70px}
 .badge{align-self:flex-start;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted)}
 .badge.warn{background:color-mix(in srgb,#d88a00 18%,transparent);color:#a86a00}
 .badge.bad{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
+.big3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.big3>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.big3 span{font-size:13px;color:var(--muted)}.big3 b{font:700 19px var(--display);overflow-wrap:anywhere}
+.big3 .i b{color:var(--ok)}.big3 .o b{color:var(--warn)}.big3 .r{border-width:2px}
+.owed{width:100%;text-align:left;background:var(--card);border:1px solid #e0b04a;border-radius:12px;padding:10px 14px;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.owed b{font:700 18px var(--display);color:#a86a00}
+.bigbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bigbtns button{min-height:58px;font-size:17px;font-weight:700;border-radius:12px;border:0;color:#fff}
+.bigbtns .in{background:var(--ok)}.bigbtns .out{background:#d0602a}
+.journal{display:flex;flex-direction:column}
+.jrow{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.jrow:last-child{border-bottom:0}
+.jrow .amt{font:700 16px var(--display);white-space:nowrap}.jrow .amt.i{color:var(--ok)}.jrow .amt.o{color:var(--warn)}
+.jrow .txt{flex:1;min-width:0;font-size:14px}.jrow .txt small{color:var(--muted);display:block}
+.jrow button{min-height:34px;padding:0 8px;font-size:13px}
+details.more summary{cursor:pointer;color:var(--brand-deep);font-weight:600}
+details.more h2{font:600 14px var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--brand-deep);margin:0 0 6px}
 .subtabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px}
 .subtabs button{flex:1;border:0;background:transparent;min-height:40px;font-size:13px;color:var(--muted);padding:0 6px}
 .subtabs button[aria-selected=true]{background:var(--brand);color:#fff}
@@ -168,36 +185,31 @@ textarea{resize:vertical;min-height:70px}
   <div id="docForm" style="display:flex;flex-direction:column;gap:16px"></div>
 </main>
 <main class="wrap" id="tab-fin" hidden>
-  <div class="subtabs" id="finSub" role="tablist"><button data-sub="tdb" role="tab">Bilan</button><button data-sub="enc" role="tab">À encaisser</button><button data-sub="rec" role="tab">Recettes</button><button data-sub="dep" role="tab">Dépenses</button></div>
+  <div class="subtabs" id="finSub" role="tablist"><button data-sub="tdb" role="tab">Caisse</button><button data-sub="enc" role="tab">On me doit</button></div>
   <section class="sheet" id="finPerBox"><div class="grid">
-    <label>Période<select id="finPer"><option value="mois">Mois</option><option value="annee">Année</option><option value="tout">Tout</option></select></label>
+    <label>Période<select id="finPer"><option value="jour">Aujourd’hui</option><option value="mois" selected>Ce mois</option><option value="annee">Année</option><option value="tout">Tout</option></select></label>
     <label id="finMonthLbl">Mois<input type="month" id="finMonth"></label></div></section>
   <p id="finStatus" class="hint" role="status" style="margin:0"></p>
-  <div id="finTdb" style="display:flex;flex-direction:column;gap:16px">
-    <section class="sheet"><h2>Chiffres de la période</h2><div class="kpis" id="tdbKpi"></div></section>
-    <section class="sheet"><h2>À suivre</h2><div class="kpis" id="tdbAlert"></div></section>
-    <section class="sheet"><h2>6 derniers mois</h2><div id="tdbChart"></div></section>
-    <section class="sheet"><h2>Recettes sans facture par service</h2><div id="tdbRec"></div></section>
-    <section class="sheet"><h2>Dépenses par catégorie</h2><div id="tdbCats"></div></section>
+  <div id="finTdb" style="display:flex;flex-direction:column;gap:14px">
+    <div class="big3" id="big3"></div>
+    <button type="button" class="owed" id="owedBtn"></button>
+    <div class="bigbtns"><button type="button" class="in" id="recAdd">+ Argent reçu</button><button type="button" class="out" id="depAdd">− Argent dépensé</button></div>
+    <section class="sheet" id="recForm" hidden></section>
+    <section class="sheet" id="depForm" hidden></section>
+    <section class="sheet"><h2>Mouvements</h2><div id="journal" class="journal"></div></section>
+    <details class="sheet more"><summary>Plus de détails (chiffre d’affaires, TVA, graphique)</summary>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-top:10px">
+        <div class="kpis" id="tdbKpi"></div><div class="kpis" id="tdbAlert"></div>
+        <div><h2>6 derniers mois</h2><div id="tdbChart"></div></div>
+        <div><h2>Entrées sans facture par service</h2><div id="tdbRec"></div></div>
+        <div><h2>Dépenses par catégorie</h2><div id="tdbCats"></div></div>
+      </div></details>
   </div>
   <div id="finEnc" hidden style="display:flex;flex-direction:column;gap:12px">
-    <section class="sheet"><h2>Reste à encaisser : <span id="encTot"></span></h2>
+    <section class="sheet"><h2>On me doit : <span id="encTot"></span></h2>
       <label class="check"><input type="checkbox" id="encAll"> Afficher aussi les factures payées</label>
-      <p class="hint" style="margin:0">Touche « Paiements et relance » pour noter un paiement (acompte, solde) ou envoyer un rappel WhatsApp.</p></section>
+      <p class="hint" style="margin:0">Touche une facture pour noter un paiement ou envoyer un rappel WhatsApp.</p></section>
     <div id="encList" style="display:flex;flex-direction:column;gap:10px"></div>
-  </div>
-  <div id="finRec" hidden style="display:flex;flex-direction:column;gap:12px">
-    <section class="sheet"><h2>Recettes sans facture : <span id="recTot"></span></h2>
-      <p class="hint" style="margin:0">Argent reçu pour un service non facturé (dépannage, petite réparation, vente au comptoir…).</p>
-      <button type="button" class="primary" id="recAdd">+ Nouvelle recette</button></section>
-    <section class="sheet" id="recForm" hidden></section>
-    <div id="recList" style="display:flex;flex-direction:column;gap:10px"></div>
-  </div>
-  <div id="finDep" hidden style="display:flex;flex-direction:column;gap:12px">
-    <section class="sheet"><h2>Dépenses de la période : <span id="depTot"></span></h2>
-      <button type="button" class="primary" id="depAdd">+ Nouvelle dépense</button></section>
-    <section class="sheet" id="depForm" hidden></section>
-    <div id="depList" style="display:flex;flex-direction:column;gap:10px"></div>
   </div>
 </main>
 <main class="wrap" id="tab-hist" hidden>
@@ -1086,6 +1098,7 @@ function periodRange(){
   const t=$('finPer').value,m=$('finMonth').value||today().slice(0,7),y=m.slice(0,4);
   if(t==='mois'){const [yy,mm]=m.split('-').map(Number);const e=new Date(Date.UTC(yy,mm,1)).toISOString().slice(0,10);return {from:m+'-01',to:e,label:MOIS[mm-1]+' '+yy}}
   if(t==='annee')return {from:y+'-01-01',to:(+y+1)+'-01-01',label:'Année '+y};
+  if(t==='jour'){const d=today(),n=new Date(Date.parse(d)+864e5).toISOString().slice(0,10);return {from:d,to:n,label:'Aujourd’hui'}}
   return {from:'0000',to:'9999',label:'Depuis le début'};
 }
 const inP=(d,r)=>!!d&&d>=r.from&&d<r.to;
@@ -1104,14 +1117,15 @@ function stats(r){
 let FINSUB='tdb';
 function renderFin(){
   document.querySelectorAll('#finSub button').forEach(b=>b.setAttribute('aria-selected',b.dataset.sub===FINSUB?'true':'false'));
-  $('finTdb').hidden=FINSUB!=='tdb';$('finEnc').hidden=FINSUB!=='enc';$('finDep').hidden=FINSUB!=='dep';$('finRec').hidden=FINSUB!=='rec';
+  $('finTdb').hidden=FINSUB!=='tdb';$('finEnc').hidden=FINSUB!=='enc';
   $('finMonthLbl').hidden=$('finPer').value!=='mois';
   $('finPerBox').hidden=FINSUB==='enc';
-  if(FINSUB==='tdb')renderTdb();if(FINSUB==='enc')renderEnc();if(FINSUB==='dep')renderDep();if(FINSUB==='rec')renderRec();
+  if(FINSUB==='tdb')renderTdb();if(FINSUB==='enc')renderEnc();
 }
 function kpi(lbl,val,cls,sub){return `<div class="kpi ${cls||''}"><span>${lbl}</span><b>${val}</b>${sub?`<small>${sub}</small>`:''}</div>`}
 function renderTdb(){
   const r=periodRange(),s=stats(r);
+  renderSimple(r,s);
   const open=factures().map(h=>({h,p:payInfo(h)})).filter(x=>x.p.st!=='payee');
   const reste=open.reduce((a,x)=>a+x.p.reste,0),late=open.filter(x=>x.p.late);
   const dv=DB.hist.filter(h=>h.type==='devis'&&h.statut!=='accepte');
@@ -1158,15 +1172,16 @@ function depForm(dp){
   depEdit=dp||{id:uid(),date:today(),montant:'',cat:DEPCATS[0],fournisseur:'',note:'',photo:false,isNew:true};
   const e=depEdit;
   $('depForm').hidden=false;
-  $('depForm').innerHTML=`<h2>${e.isNew?'Nouvelle dépense':'Modifier la dépense'}</h2>
+  $('recForm').hidden=true;
+  $('depForm').innerHTML=`<h2>${e.isNew?'− Argent dépensé':'Modifier la dépense'}</h2>
    <div class="grid">
+    <label>Montant<span class="unit"><input data-d="montant" inputmode="decimal" value="${esc(String(e.montant).replace('.',','))}"><span>DT</span></span></label>
     <label>Date<input type="date" data-d="date" value="${esc(e.date)}"></label>
-    <label>Montant TTC<span class="unit"><input data-d="montant" inputmode="decimal" value="${esc(String(e.montant).replace('.',','))}"><span>DT</span></span></label>
-    <label class="full">Catégorie<select data-d="cat">${DEPCATS.map(c=>`<option${c===e.cat?' selected':''}>${esc(c)}</option>`).join('')}</select></label>
-    <label class="full">Fournisseur / bénéficiaire<input data-d="fournisseur" value="${esc(e.fournisseur)}" list="dlFour"></label>
+    <label class="full">Pour quoi ?<select data-d="cat">${DEPCATS.map(c=>`<option${c===e.cat?' selected':''}>${esc(c)}</option>`).join('')}</select></label>
+    <label class="full">Chez qui (facultatif)<input data-d="fournisseur" value="${esc(e.fournisseur)}" list="dlFour"></label>
     <label class="full">Note<input data-d="note" value="${esc(e.note)}" placeholder="ex. câble 4×6 chantier Agareb"></label>
     <div class="full photo-row"><label class="filebtn">📷 ${e.photo?'Changer la photo':'Photo du ticket / facture'}<input type="file" accept="image/*" capture="environment" hidden id="depPhoto"></label><span id="depThumb"></span></div>
-    <div class="full row"><button type="button" class="primary" id="depSave">Enregistrer la dépense</button><button type="button" id="depCancel">Annuler</button></div>
+    <div class="full row"><button type="button" class="primary" id="depSave">Enregistrer</button><button type="button" id="depCancel">Annuler</button>${e.isNew?'':'<button type="button" class="ghost danger" id="depDel">Supprimer</button>'}</div>
    </div>
    <datalist id="dlFour">${[...new Set(DB.dep.map(d=>d.fournisseur).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
   let newPhoto=null;
@@ -1174,75 +1189,69 @@ function depForm(dp){
   if(e.photo)PH.get(e.id).then(s=>thumb(s));
   $('depPhoto').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;$('depThumb').textContent='Compression…';newPhoto=await compressImage(f);thumb(newPhoto)};
   $('depCancel').onclick=()=>{$('depForm').hidden=true;depEdit=null};
+  const dd=$('depDel');if(dd)dd.onclick=()=>{if(!dd.dataset.armed){dd.dataset.armed='1';dd.textContent='Confirmer ?';return}
+    DB.dep=DB.dep.filter(x=>x!==e);if(e.photo)PH.del(e.id).catch(()=>{});saveD();$('depForm').hidden=true;depEdit=null;renderFin()};
   $('depSave').onclick=async()=>{
     const g=k=>$('depForm').querySelector('[data-d='+k+']').value;
     const m=n3(g('montant'));if(!(m>0)){$('depForm').querySelector('[data-d=montant]').focus();return}
     Object.assign(e,{date:g('date')||today(),montant:String(Math.round(m*1000)/1000),cat:g('cat'),fournisseur:g('fournisseur').trim(),note:g('note').trim()});
     if(newPhoto){try{await PH.set(e.id,newPhoto);e.photo=true}catch(err){$('finStatus').textContent='Photo non enregistrée (mémoire pleine ?)'}}
     const wasNew=e.isNew;delete e.isNew;if(wasNew)DB.dep.push(e);saveD();
-    $('depForm').hidden=true;depEdit=null;renderDep();$('finStatus').textContent='Dépense enregistrée : '+money(m)+' DT';
+    $('depForm').hidden=true;depEdit=null;renderFin();$('finStatus').textContent='Sortie enregistrée : '+money(m)+' DT';
   };
-  $('depForm').scrollIntoView({behavior:'smooth',block:'start'});
+  $('depForm').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('depForm').querySelector('[data-d=montant]').focus(),300);
 }
-function renderDep(){
-  const r=periodRange(),box=$('depList');box.textContent='';
-  const items=DB.dep.filter(d=>inP(d.date,r)).sort((a,b)=>b.date.localeCompare(a.date));
-  $('depTot').textContent=money(items.reduce((a,d)=>a+n3(d.montant),0))+' DT';
-  if(!items.length){box.innerHTML='<p class="hint">Aucune dépense sur la période.</p>';return}
-  items.forEach(dp=>{
-    const d=document.createElement('div');d.className='hitem dep';
-    d.innerHTML=`<div class="deprow"><span class="tw"></span><div style="flex:1;min-width:0"><b>${money(n3(dp.montant))} DT</b> <span class="hint">· ${esc(frDate(dp.date))}</span><br>${esc(dp.cat)}${dp.fournisseur?' · '+esc(dp.fournisseur):''}${dp.note?'<br><span class="hint">'+esc(dp.note)+'</span>':''}</div></div>
-      <div class="row"><button type="button" class="ghost" data-a="edit">Modifier</button><button type="button" class="ghost danger" data-a="del">Suppr.</button></div>`;
-    if(dp.photo)PH.get(dp.id).then(s=>{if(s){const i=document.createElement('img');i.src=s;i.className='thumb';i.alt='Justificatif';i.onclick=()=>showPhoto(s);d.querySelector('.tw').appendChild(i)}});
-    d.querySelector('[data-a=edit]').onclick=()=>depForm(dp);
-    const del=d.querySelector('[data-a=del]');
-    del.onclick=()=>{if(!del.dataset.armed){del.dataset.armed='1';del.textContent='Confirmer ?';setTimeout(()=>{if(del.isConnected){delete del.dataset.armed;del.textContent='Suppr.'}},3000);return}
-      DB.dep=DB.dep.filter(x=>x!==dp);if(dp.photo)PH.del(dp.id).catch(()=>{});saveD();renderDep()};
-    box.appendChild(d);
+// ---- vue simple : Entrées / Sorties / Reste + journal
+function renderSimple(r,s){
+  $('big3').innerHTML=`<div class="i"><span>Entrées</span><b>${money(s.enc)}</b></div><div class="o"><span>Sorties</span><b>${money(s.dep)}</b></div><div class="r" style="border-color:${s.treso>=0?'var(--ok)':'var(--warn)'}"><span>Reste</span><b style="color:${s.treso>=0?'var(--ok)':'var(--warn)'}">${money(s.treso)}</b></div>`;
+  const open=factures().map(payInfo).filter(p=>p.st!=='payee'),owed=open.reduce((a,p)=>a+p.reste,0);
+  $('owedBtn').innerHTML=`<span>On me doit (factures)<br><small class="hint">${open.length} facture(s)${open.some(p=>p.late)?' · dont en retard':''}</small></span><b>${money(owed)} DT ›</b>`;
+  $('owedBtn').hidden=!open.length;
+  const J=[];
+  DB.rec.forEach(x=>{if(inP(x.date,r))J.push({d:x.date,t:'rec',v:n3(x.montant),txt:x.cat,sub:[x.client,x.note].filter(Boolean).join(' · '),o:x})});
+  DB.dep.forEach(x=>{if(inP(x.date,r))J.push({d:x.date,t:'dep',v:n3(x.montant),txt:x.cat,sub:[x.fournisseur,x.note].filter(Boolean).join(' · '),o:x})});
+  factures().forEach(h=>(h.paiements||[]).forEach(p=>{if(inP(p.date,r))J.push({d:p.date,t:'pay',v:n3(p.montant),txt:'Facture '+h.num,sub:[(h.client||{}).nom,p.mode].filter(Boolean).join(' · ')})}));
+  J.sort((a,b)=>b.d.localeCompare(a.d));
+  const box=$('journal');box.textContent='';
+  if(!J.length){box.innerHTML='<p class="hint">Rien sur cette période. Touche « + Argent reçu » ou « − Argent dépensé ».</p>';return}
+  J.forEach(j=>{
+    const row=document.createElement('div');row.className='jrow';
+    const out=j.t==='dep';
+    row.innerHTML=`<span class="amt ${out?'o':'i'}">${out?'−':'+'} ${money(j.v)}</span><div class="txt">${esc(j.txt)}<small>${esc(frDate(j.d))}${j.sub?' · '+esc(j.sub):''}</small></div><span class="tw"></span>${j.o?'<button type="button" class="ghost">Modifier</button>':''}`;
+    if(j.o){row.querySelector('button').onclick=()=>j.t==='dep'?depForm(j.o):recForm(j.o)}
+    if(j.t==='dep'&&j.o.photo)PH.get(j.o.id).then(s=>{if(s){const i=document.createElement('img');i.src=s;i.className='thumb';i.style.cssText='width:38px;height:38px';i.alt='Justificatif';i.onclick=()=>showPhoto(s);row.querySelector('.tw').appendChild(i)}});
+    box.appendChild(row);
   });
 }
 // ---- recettes sans facture
 function recForm(rc){
   const e=rc||{id:uid(),date:today(),montant:'',cat:RECCATS[0],client:'',mode:'Espèces',note:'',isNew:true};
-  const f=$('recForm');f.hidden=false;
-  f.innerHTML=`<h2>${e.isNew?'Nouvelle recette':'Modifier la recette'}</h2>
+  const f=$('recForm');f.hidden=false;$('depForm').hidden=true;
+  f.innerHTML=`<h2>${e.isNew?'+ Argent reçu':'Modifier l’entrée'}</h2>
    <div class="grid">
+    <label>Montant<span class="unit"><input data-r="montant" inputmode="decimal" value="${esc(String(e.montant).replace('.',','))}"><span>DT</span></span></label>
     <label>Date<input type="date" data-r="date" value="${esc(e.date)}"></label>
-    <label>Montant reçu<span class="unit"><input data-r="montant" inputmode="decimal" value="${esc(String(e.montant).replace('.',','))}"><span>DT</span></span></label>
-    <label>Service<select data-r="cat">${RECCATS.map(c=>`<option${c===e.cat?' selected':''}>${esc(c)}</option>`).join('')}</select></label>
+    <label>Pour quoi ?<select data-r="cat">${RECCATS.map(c=>`<option${c===e.cat?' selected':''}>${esc(c)}</option>`).join('')}</select></label>
     <label>Mode<select data-r="mode">${MODES.map(m=>`<option${m===e.mode?' selected':''}>${m}</option>`).join('')}</select></label>
     <label class="full">Client (facultatif)<input data-r="client" value="${esc(e.client)}" list="dlRecCli"></label>
     <label class="full">Note<input data-r="note" value="${esc(e.note)}" placeholder="ex. changement condensateur, puits à Agareb"></label>
-    <div class="full row"><button type="button" class="primary" id="recSave">Enregistrer la recette</button><button type="button" id="recCancel">Annuler</button></div>
+    <div class="full row"><button type="button" class="primary" id="recSave">Enregistrer</button><button type="button" id="recCancel">Annuler</button>${e.isNew?'':'<button type="button" class="ghost danger" id="recDel">Supprimer</button>'}</div>
    </div>
    <datalist id="dlRecCli">${[...new Set([...DB.rec.map(d=>d.client),...DB.hist.map(h=>h.client&&h.client.nom)].filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
   $('recCancel').onclick=()=>{f.hidden=true};
+  const rd=$('recDel');if(rd)rd.onclick=()=>{if(!rd.dataset.armed){rd.dataset.armed='1';rd.textContent='Confirmer ?';return}
+    DB.rec=DB.rec.filter(x=>x!==e);saveD();f.hidden=true;renderFin()};
   $('recSave').onclick=()=>{
     const g=k=>f.querySelector('[data-r='+k+']').value;
     const m=n3(g('montant'));if(!(m>0)){f.querySelector('[data-r=montant]').focus();return}
     Object.assign(e,{date:g('date')||today(),montant:String(Math.round(m*1000)/1000),cat:g('cat'),mode:g('mode'),client:g('client').trim(),note:g('note').trim()});
     const wasNew=e.isNew;delete e.isNew;if(wasNew)DB.rec.push(e);saveD();
-    f.hidden=true;renderRec();$('finStatus').textContent='Recette enregistrée : '+money(m)+' DT';
+    f.hidden=true;renderFin();$('finStatus').textContent='Entrée enregistrée : '+money(m)+' DT';
   };
-  f.scrollIntoView({behavior:'smooth',block:'start'});
-}
-function renderRec(){
-  const r=periodRange(),box=$('recList');box.textContent='';
-  const items=DB.rec.filter(d=>inP(d.date,r)).sort((a,b)=>b.date.localeCompare(a.date));
-  $('recTot').textContent=money(items.reduce((a,d)=>a+n3(d.montant),0))+' DT';
-  if(!items.length){box.innerHTML='<p class="hint">Aucune recette sans facture sur la période.</p>';return}
-  items.forEach(rc=>{
-    const d=document.createElement('div');d.className='hitem';
-    d.innerHTML=`<div><b style="color:var(--ok)">+ ${money(n3(rc.montant))} DT</b> <span class="hint">· ${esc(frDate(rc.date))} · ${esc(rc.mode)}</span><br>${esc(rc.cat)}${rc.client?' · '+esc(rc.client):''}${rc.note?'<br><span class="hint">'+esc(rc.note)+'</span>':''}</div>
-      <div class="row"><button type="button" class="ghost" data-a="edit">Modifier</button><button type="button" class="ghost danger" data-a="del">Suppr.</button></div>`;
-    d.querySelector('[data-a=edit]').onclick=()=>recForm(rc);
-    const del=d.querySelector('[data-a=del]');
-    del.onclick=()=>{if(!del.dataset.armed){del.dataset.armed='1';del.textContent='Confirmer ?';setTimeout(()=>{if(del.isConnected){delete del.dataset.armed;del.textContent='Suppr.'}},3000);return}
-      DB.rec=DB.rec.filter(x=>x!==rc);saveD();renderRec()};
-    box.appendChild(d);
-  });
+  f.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>f.querySelector('[data-r=montant]').focus(),300);
 }
 $('recAdd').onclick=()=>recForm();
+$('owedBtn').onclick=()=>{FINSUB='enc';renderFin()};
 document.querySelectorAll('#finSub button').forEach(b=>b.onclick=()=>{FINSUB=b.dataset.sub;renderFin()});
 $('finPer').onchange=renderFin;$('finMonth').onchange=renderFin;$('encAll').onchange=renderEnc;
 $('depAdd').onclick=()=>depForm();
