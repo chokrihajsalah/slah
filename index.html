@@ -79,6 +79,8 @@ textarea{resize:vertical;min-height:70px}
 .totbox{display:flex;flex-direction:column;gap:4px;font-size:15px}
 .totbox>div{display:flex;justify-content:space-between;padding:3px 2px;border-bottom:1px dashed var(--line)}
 .totbox .big{font-weight:700;font-size:17px;color:var(--brand-deep);border-bottom:0;padding-top:6px}
+.badge{align-self:flex-start;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted)}
+.badge.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
 .hitem{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 .pv{display:flex;flex-direction:column;gap:12px;align-items:center}
 .pv canvas{width:100%;max-width:595px;height:auto;background:#fff;border-radius:4px;box-shadow:0 2px 10px rgba(20,40,80,.18)}
@@ -137,7 +139,7 @@ textarea{resize:vertical;min-height:70px}
 <main class="wrap" id="tab-hist" hidden>
   <section class="sheet"><h2>Historique</h2>
     <div class="grid"><label>Recherche<input id="histQ" placeholder="N°, client, objet…"></label>
-    <label>Type<select id="histType"><option value="">Tous</option><option value="devis">Devis</option><option value="facture">Factures</option><option value="rapport">Essais de débit</option></select></label></div>
+    <label>Type<select id="histType"><option value="">Tous</option><option value="devis">Devis</option><option value="devis-att">Devis en attente</option><option value="devis-ok">Devis acceptés</option><option value="facture">Factures</option><option value="rapport">Essais de débit</option></select></label></div>
   </section>
   <div id="histList" style="display:flex;flex-direction:column;gap:10px"></div>
 </main>
@@ -706,11 +708,7 @@ function renderDoc(){
   $('docNew').onclick=function(){
     if(!this.dataset.armed&&!doc.saved&&doc.lignes.some(l=>l.des||l.pu)){this.dataset.armed='1';this.textContent='Non enregistré : touchez encore';setTimeout(()=>{if(this.isConnected){delete this.dataset.armed;this.textContent='Nouveau '+(isF?'facture':'devis')}},4000);return}
     DB.cur[doc.type]=newDoc(doc.type);saveD();renderDoc()};
-  if(!isF)$('docToFac').onclick=()=>{
-    if(!doc.saved)saveToHist(doc);
-    const f=newDoc('facture');Object.assign(f,{objet:doc.objet,client:{...doc.client},remise:doc.remise,lignes:JSON.parse(JSON.stringify(doc.lignes)),fromDevis:doc.num});
-    f.cond=S.condFacture+(doc.num?'\nSuivant devis n° '+doc.num+'.':'');
-    DB.cur.facture=f;saveD();showTab('facture');docStatus('Facture créée à partir du devis '+doc.num,'ok')};
+  if(!isF)$('docToFac').onclick=()=>{if(!doc.saved)saveToHist(doc);devisToFacture(doc)};
   renderLignes();renderTot();
 }
 function renderLignes(){
@@ -746,10 +744,18 @@ function renderTot(){
     +row(doc.type==='facture'?'Net à payer TTC':'Total TTC',money(t.ttc)+' DT','big')+`<p class="hint" style="margin:6px 0 0">${esc(enLettres(t.ttc))}</p>`;
 }
 function docStatus(m,c){const s=$('docStatus');if(s){s.textContent=m;s.style.color=c==='ok'?'var(--ok)':c==='err'?'var(--warn)':''}}
+// Devis accepté par le client → nouvelle facture (le devis est marqué « Accepté »)
+function devisToFacture(dv){
+  const f=newDoc('facture');Object.assign(f,{objet:dv.objet,client:{...dv.client},remise:dv.remise,lignes:JSON.parse(JSON.stringify(dv.lignes)),fromDevis:dv.num});
+  f.cond=S.condFacture+(dv.num?'\nSuivant devis n° '+dv.num+'.':'');
+  const hd=DB.hist.find(x=>x.id===dv.id);
+  if(hd){hd.statut='accepte';hd.facture=f.num;hd.facId=f.id;hd.data.statut='accepte'}
+  DB.cur.facture=f;saveD();showTab('facture');docStatus('Facture '+f.num+' créée à partir du devis '+dv.num+'. Vérifie puis touche « Enregistrer » ou « Envoyer le PDF ».','ok');
+}
 function saveToHist(doc){
   doc.saved=true;const t=totals(doc);
   const snap={id:doc.id,type:doc.type,num:doc.num,date:doc.date,client:{...doc.client},ttc:t.ttc,objet:doc.objet,data:JSON.parse(JSON.stringify(doc)),at:Date.now()};
-  const i=DB.hist.findIndex(h=>h.id===doc.id);if(i>=0)DB.hist[i]=snap;else DB.hist.push(snap);
+  const i=DB.hist.findIndex(h=>h.id===doc.id);if(i>=0){['statut','facture','facId'].forEach(k=>{if(DB.hist[i][k]!==undefined)snap[k]=DB.hist[i][k]});DB.hist[i]=snap}else DB.hist.push(snap);
   doc.lignes.forEach(l=>{if(l.des&&l.pu)DB.cat[l.des]={pu:l.pu,u:l.u,tva:l.tva}});
   saveD();
 }
@@ -757,13 +763,14 @@ function saveToHist(doc){
 // ---- historique
 function renderHist(){
   const box=$('histList'),q=($('histQ').value||'').toLowerCase(),ft=$('histType').value;
-  const items=[...DB.hist].filter(h=>(!ft||h.type===ft)&&(!q||[h.num,h.client&&h.client.nom,h.objet].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.at-a.at);
+  const items=[...DB.hist].filter(h=>(!ft||h.type===ft||(ft==='devis-att'&&h.type==='devis'&&h.statut!=='accepte')||(ft==='devis-ok'&&h.type==='devis'&&h.statut==='accepte'))&&(!q||[h.num,h.client&&h.client.nom,h.objet].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.at-a.at);
   box.textContent='';
   if(!items.length){box.innerHTML='<p class="hint">Aucun document enregistré.</p>';return}
   items.forEach(h=>{
     const d=document.createElement('div');d.className='hitem';
     d.innerHTML=`<div><b>${esc(TYPELBL[h.type])} ${esc(h.num||'')}</b><span class="hint"> · ${esc(frDate(h.date))}</span><br>${esc((h.client&&h.client.nom)||'—')}${h.type!=='rapport'?` · <b>${money(h.ttc||0)} DT</b>`:''}</div>
-      <div class="row"><button type="button" class="ghost" data-a="open">Ouvrir</button><button type="button" class="ghost" data-a="dup">Dupliquer</button><button type="button" class="ghost danger" data-a="del">Suppr.</button></div>`;
+      ${h.type==='devis'?(h.statut==='accepte'?`<span class="badge ok">✓ Accepté${h.facture?' → '+esc(h.facture):''}</span>`:'<span class="badge">En attente</span>'):''}
+      <div class="row">${h.type==='devis'?`<button type="button" class="primary" data-a="fac">${h.statut==='accepte'?'Refacturer':'Client d’accord → Facture'}</button>`:''}<button type="button" class="ghost" data-a="open">Ouvrir</button><button type="button" class="ghost" data-a="dup">Dupliquer</button><button type="button" class="ghost danger" data-a="del">Suppr.</button></div>`;
     d.querySelector('[data-a=open]').onclick=()=>{
       if(h.type==='rapport'){state=JSON.parse(JSON.stringify(h.data));save();bindTop();renderForages();showTab('rapport');return}
       DB.cur[h.type]=JSON.parse(JSON.stringify(h.data));saveD();showTab(h.type)};
@@ -771,6 +778,10 @@ function renderHist(){
       if(h.type==='rapport'){state=JSON.parse(JSON.stringify(h.data));state.date=today();save();bindTop();renderForages();showTab('rapport');return}
       const c=JSON.parse(JSON.stringify(h.data));c.id='d'+Date.now();c.date=today();c.num=nextNum(c.type,c.date);c.saved=false;delete c.fromDevis;
       DB.cur[c.type]=c;saveD();showTab(c.type)};
+    const fb=d.querySelector('[data-a=fac]');
+    if(fb)fb.onclick=()=>{
+      if(h.statut==='accepte'&&!fb.dataset.armed){fb.dataset.armed='1';fb.textContent='Déjà facturé ('+(h.facture||'')+') : toucher encore';setTimeout(()=>{if(fb.isConnected){delete fb.dataset.armed;fb.textContent='Refacturer'}},4000);return}
+      devisToFacture(h.data)};
     const del=d.querySelector('[data-a=del]');
     del.onclick=()=>{if(!del.dataset.armed){del.dataset.armed='1';del.textContent='Confirmer ?';setTimeout(()=>{if(del.isConnected){delete del.dataset.armed;del.textContent='Suppr.'}},3000);return}
       DB.hist=DB.hist.filter(x=>x!==h);saveD();renderHist()};
