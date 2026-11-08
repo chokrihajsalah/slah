@@ -502,73 +502,129 @@ async function buildPdf(){
   const {PDFDocument,StandardFonts,rgb}=PDFLib;
   const a=await loadAssets();
   const doc=await PDFDocument.create();
-  doc.setTitle('Rapport Essai de débit'+(v(state.client)?' - '+v(state.client):''));
+  doc.setTitle('Rapport d’essai de débit'+(v(state.client)?' - '+v(state.client):''));
   doc.setAuthor("Slah Bel Haj Salah - Pompage et traitement des eaux");
   const [bg]=await doc.embedPdf(a.tpl.slice(0),[0]);
   const H=bg.height,W=bg.width;
   const reg=await doc.embedFont(StandardFonts.Helvetica),bold=await doc.embedFont(StandardFonts.HelveticaBold);
-  const ink=rgb(.133,.133,.133),black=rgb(0,0,0),blue=rgb(0x15/255,0x3b/255,0x5b/255);
-  const TOP=248,TY=262,BOTTOM=745,X0=62,XT=98,CX=297.6;
+  const navy=rgb(0x15/255,0x3b/255,0x5b/255),teal=rgb(0x16/255,0x83/255,0xa8/255),ink=rgb(.13,.15,.18),grey=rgb(.45,.48,.53),
+        light=rgb(.93,.96,.98),line=rgb(.82,.87,.92),water=rgb(.80,.91,.97),white=rgb(1,1,1),orange=rgb(.82,.38,.16);
+  const L=58,R=537,TOP=246,BOT=750;
   let page,y;
   const newPage=()=>{page=doc.addPage([W,H]);page.drawPage(bg,{x:0,y:0,width:W,height:H});headerFields(page,H,reg);y=TOP};
-  const text=(s,x,yy,font,size,color)=>page.drawText(safe(s),{x,y:H-yy,size,font,color});
+  const T=(s,x,yy,f,sz,c)=>page.drawText(safe(s),{x,y:H-yy,size:sz,font:f,color:c||ink});
+  const TR=(s,xr,yy,f,sz,c)=>{s=safe(s);T(s,xr-f.widthOfTextAtSize(s,sz),yy,f,sz,c)};
+  const box=(x,yy,w,h,o)=>page.drawRectangle({x,y:H-(yy+h),width:w,height:h,...o});
+  const nm=x=>{const n=parseFloat(String(x??'').replace(',','.'));return isFinite(n)?n:NaN};
+  const u=(x,unit)=>v(x)?String(v(x)).replace('.',',')+' '+unit:'';
   newPage();
 
-  // Titre
-  const title='Rapport Essai de débit',ts=26,tw=reg.widthOfTextAtSize(title,ts);
-  text(title,CX-tw/2,TY,reg,ts,black);
-  page.drawLine({start:{x:CX-tw/2,y:H-(TY+3.5)},end:{x:CX+tw/2,y:H-(TY+3.5)},thickness:1.3,color:black});
-  y=TY+30;
-  [['Adresse forage : ',state.adresse],['Client : ',state.client],['Contact : ',state.contact],['Date : ',frDate(state.date)]].forEach(([l,val])=>{
-    if(!v(val))return;text(l+v(val),X0,y,reg,12.5,blue);y+=16;
+  // ---- en-tête du rapport
+  T('RAPPORT D’ESSAI DE DÉBIT',L,y+16,bold,17,navy);
+  TR(frDate(state.date),R,y+15,reg,10,grey);
+  y+=28;
+  const info=[['Lieu du forage',state.adresse],['Client',state.client],['Contact',state.contact],['Nombre de forages',String(state.forages.length)]].filter(r=>v(r[1]));
+  const ih=12+Math.ceil(info.length/2)*16;
+  box(L,y,R-L,ih,{color:light});
+  info.forEach(([k,val],i)=>{const cx=L+10+(i%2)*((R-L)/2),cy=y+15+Math.floor(i/2)*16;T(k+' :',cx,cy,reg,9,grey);T(val,cx+reg.widthOfTextAtSize(safe(k+' : '),9)+2,cy,bold,10,ink)});
+  y+=ih+14;
+
+  // ---- un bloc par forage
+  const blocks=state.forages.map((f,fi)=>{
+    const {eff,info:inf}=calc(f);
+    const pp=[v(f.puissance)?String(v(f.puissance)).replace('.',',')+' HP':'',v(f.tension)?v(f.tension)+' V':''].filter(Boolean).join(' / ');
+    const sec=[
+      ['Le forage',[['Profondeur',u(f.profondeur,'m')],['Diamètre du tubage',u(f.diametre,'mm')],['Niveau statique',u(f.statique,'m')]]],
+      ['Conditions de l’essai',[['Pompe d’essai',pp],['Profondeur de la pompe',u(f.immersion,'m')],['Débit pompé',u(f.debitTest,'l/s')],['Temps d’initialisation',u(f.tempsInit,'min')]]],
+      ['Mesures',[['Niveau dynamique',u(f.dynamique,'m')],['Rabattement',u(eff.rabattement,'m')],['Débit spécifique',isFinite(inf.q)?fmt(inf.q)+' l/s/m':'']]]
+    ].map(([t,rows])=>[t,rows.filter(r=>r[1])]).filter(s=>s[1].length);
+    const rowsH=sec.reduce((a,s)=>a+15+s[1].length*14.5+6,0);
+    const res=eff.debitPropose?{q:eff.debitPropose,pp:eff.profPropose,pompe:[eff.puisConseil?eff.puisConseil.replace('.',',')+' HP':'',eff.tensConseil?eff.tensConseil+' V':''].filter(Boolean).join(' / '),nd:inf.NDp,qs:inf.q}:null;
+    const bodyH=Math.max(rowsH,190);
+    return {f,fi,sec,res,bodyH,h:24+bodyH+(res?72:0)+14};
   });
-  y+=20;
+  const sigNeed=withCachet()?122:52;
+  function withCachet(){return state.cachet!==false&&!!a.cachet}
 
-  const STEP=13;
-  const diamond=(cx,cy)=>{ // ❖
-    const d=2.1;[[0,-d*1.25],[d*1.25,0],[0,d*1.25],[-d*1.25,0]].forEach(([dx,dy])=>{
-      page.drawSvgPath(`M0 ${-d} L${d} 0 L0 ${d} L${-d} 0 Z`,{x:cx+dx,y:H-(cy+dy),color:ink});
+  blocks.forEach((b,i)=>{
+    const last=i===blocks.length-1;
+    if(y+b.h+(last?sigNeed:0)>BOT&&y>TOP+60)newPage();
+    const f=b.f;
+    // bandeau
+    box(L,y,R-L,20,{color:navy});box(L,y+20,R-L,2,{color:teal});
+    T(v(f.nom)||('FORAGE '+String(b.fi+1).padStart(2,'0')),L+10,y+14,bold,11,white);
+    y+=30;
+    // tableaux (colonne gauche)
+    const cw=300;let ty=y;
+    b.sec.forEach(([t,rows])=>{
+      T(t.toUpperCase(),L,ty+9,bold,8.5,teal);ty+=15;
+      rows.forEach(([k,val],j)=>{if(j%2===0)box(L,ty-1,cw,14.5,{color:light});T(k,L+6,ty+9.5,reg,9.5,ink);TR(val,L+cw-6,ty+9.5,bold,9.5,ink);ty+=14.5});
+      ty+=6;
     });
-  };
-  const arrow=(cx,cy)=>{ // ➢
-    page.drawSvgPath('M0 -4.2 L8.5 0 L0 4.2 L2.4 0 Z',{x:cx-4,y:H-cy,color:ink});
-  };
-
-  state.forages.forEach((f,fi)=>{
-    const {L,prop,conseil}=forageLines(f);
-    const R=[['Résultat :  ',prop],['Pompe conseillée :  ',conseil]].filter(r=>r[1]);
-    const need=20+(L.length+R.length)*STEP;
-    const last=fi===state.forages.length-1,sigNeed=18+((state.cachet!==false&&CACHET_B64)?130:50);
-    if(y+(last?need+sigNeed:Math.min(need,120))>(last?758:BOTTOM)&&y>TOP+120)newPage();
-    text(v(f.nom)||('FORAGE '+String(fi+1).padStart(2,'0')),X0,y,bold,12,black);
-    y+=23;
-    L.forEach(t=>{ if(y>BOTTOM)newPage(); diamond(X0+5.5,y-4); text(t,XT,y,reg,12,ink); y+=STEP; });
-    R.forEach(([lab,val])=>{
-      if(y>BOTTOM)newPage();
-      arrow(X0+5,y-4);
-      text(lab,XT,y,reg,12,ink);
-      const px=XT+reg.widthOfTextAtSize(safe(lab),12),pw=bold.widthOfTextAtSize(safe(val),11);
-      text(val,px,y,bold,11,ink);
-      page.drawLine({start:{x:px,y:H-(y+1.8)},end:{x:px+pw,y:H-(y+1.8)},thickness:.8,color:ink});
-      y+=STEP;
-    });
+    // schéma du puits (colonne droite)
+    drawWell(L+cw+22,y,R-(L+cw+22),b.bodyH-6,f,b.res);
+    y+=b.bodyH;
+    // résultat
+    if(b.res){
+      const r=b.res;
+      box(L,y,R-L,62,{color:light,borderColor:navy,borderWidth:1});box(L,y,5,62,{color:teal});
+      T('RÉSULTAT DE L’ESSAI',L+16,y+14,bold,8.5,teal);
+      T('Débit d’exploitation conseillé : ',L+16,y+32,reg,12,ink);
+      T(r.q.replace('.',',')+' l/s',L+16+reg.widthOfTextAtSize(safe('Débit d’exploitation conseillé : '),12),y+32,bold,14,navy);
+      const l2=[r.pp?'Pompe à installer à '+r.pp.replace('.',',')+' m':'',r.pompe?r.pompe:''].filter(Boolean).join('  ·  ');
+      if(l2)T(l2,L+16,y+47,bold,10.5,ink);
+      const l3=[isFinite(r.nd)?'Niveau d’eau prévu en exploitation ≈ '+fmt(r.nd)+' m':''].filter(Boolean).join('');
+      if(l3)T(l3.replace('≈','~'),L+16,y+58,reg,8.5,grey);
+      y+=62;
+    }
     y+=14;
   });
 
-  // Signature
-  const withC=state.cachet!==false&&a.cachet;
-  const sigH=withC?130:50;
-  if(y+18+sigH>758)newPage();
-  let sy=y+18;
+  function drawWell(x,yy,w,h,f,res){
+    const P=nm(f.profondeur),S=nm(f.statique),D=nm(f.dynamique),I=nm(f.immersion),PP=res?nm(res.pp):NaN;
+    T('SCHÉMA DU FORAGE',x,yy+9,bold,8.5,teal);
+    if(!isFinite(P)||P<=0)return;
+    const top=yy+24,bot=yy+h-10,k=(bot-top)/P,Y=d=>top+d*k;
+    const wx=x+6,ww=26;
+    // sol
+    page.drawLine({start:{x:wx-6,y:H-top},end:{x:wx+ww+6,y:H-top},thickness:1.6,color:rgb(.55,.42,.3)});
+    // eau
+    if(isFinite(S)&&S<P)box(wx,Y(S),ww,Y(P)-Y(S),{color:water});
+    // tubage
+    page.drawLine({start:{x:wx,y:H-top},end:{x:wx,y:H-Y(P)},thickness:1.2,color:grey});
+    page.drawLine({start:{x:wx+ww,y:H-top},end:{x:wx+ww,y:H-Y(P)},thickness:1.2,color:grey});
+    page.drawLine({start:{x:wx,y:H-Y(P)},end:{x:wx+ww,y:H-Y(P)},thickness:1.2,color:grey});
+    const labels=[];
+    labels.push({d:0,t:'Sol 0 m',c:grey});
+    if(isFinite(S)){page.drawLine({start:{x:wx-4,y:H-Y(S)},end:{x:wx+ww+4,y:H-Y(S)},thickness:1.2,color:teal});labels.push({d:S,t:'Statique '+fmt(S)+' m',c:teal})}
+    if(isFinite(D)){page.drawLine({start:{x:wx-4,y:H-Y(D)},end:{x:wx+ww+4,y:H-Y(D)},thickness:1.2,color:navy,dashArray:[3,2]});labels.push({d:D,t:'Dynamique '+fmt(D)+' m',c:navy})}
+    if(isFinite(I)){box(wx+3,Y(I)-6,9,12,{color:grey});labels.push({d:I,t:'Pompe essai '+fmt(I)+' m',c:grey})}
+    if(isFinite(PP)){box(wx+ww-12,Y(PP)-6,9,12,{color:orange});labels.push({d:PP,t:'Pompe conseillée '+fmt(PP)+' m',c:orange})}
+    labels.push({d:P,t:'Fond '+fmt(P)+' m',c:grey});
+    // étiquettes sans chevauchement
+    labels.sort((a,b)=>a.d-b.d);
+    const lx=wx+ww+12,G=9.5;
+    labels.forEach((lb,i)=>{lb.y=Y(lb.d)+3;if(i&&lb.y<labels[i-1].y+G)lb.y=labels[i-1].y+G});
+    let lim=yy+h+2;for(let i=labels.length-1;i>=0;i--){if(labels[i].y>lim)labels[i].y=lim;lim=labels[i].y-G}
+    labels.forEach(lb=>{const ly=lb.y;
+      page.drawLine({start:{x:wx+ww+2,y:H-Y(lb.d)},end:{x:lx-2,y:H-(ly-3)},thickness:.4,color:line});
+      T(lb.t,lx,ly,reg,7.5,lb.c)});
+  }
+
+  // ---- signature
+  const withC=withCachet();
+  if(y+sigNeed>758)newPage();
+  let sy=y+12;
   const SX=440;
   ["Slah Bel Haj Salah",(v(state.signataire)||v(S.signataire)).toLowerCase()==='slah bel haj salah'?'':(v(state.signataire)||v(S.signataire)),v(state.fonction)||v(S.fonction)].forEach(t=>{
-    if(!t)return;const w=bold.widthOfTextAtSize(safe(t),11.5);text(t,SX-w/2,sy,bold,11.5,black);sy+=15;
+    if(!t)return;const w=bold.widthOfTextAtSize(safe(t),11);T(t,SX-w/2,sy,bold,11,ink);sy+=14;
   });
   if(withC){
     const img=await doc.embedJpg(a.cachet.slice(0));
-    const w=84,h=w*img.height/img.width;
+    const w=76,h=w*img.height/img.width;
     page.drawImage(img,{x:SX+5-w/2,y:H-(sy-4+h),width:w,height:h});
   }
+  const pages=doc.getPages();if(pages.length>1)pages.forEach((p,i)=>{const s='Page '+(i+1)+'/'+pages.length;p.drawText(s,{x:R-reg.widthOfTextAtSize(s,8),y:H-760,size:8,font:reg,color:grey})});
   return doc.save();
 }
 
