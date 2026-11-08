@@ -78,6 +78,37 @@ textarea{resize:vertical;min-height:70px}
 .totbox>div{display:flex;justify-content:space-between;padding:3px 2px;border-bottom:1px dashed var(--line)}
 .totbox .big{font-weight:700;font-size:17px;color:var(--brand-deep);border-bottom:0;padding-top:6px}
 .badge{align-self:flex-start;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted)}
+.badge.warn{background:color-mix(in srgb,#d88a00 18%,transparent);color:#a86a00}
+.badge.bad{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
+.subtabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px}
+.subtabs button{flex:1;border:0;background:transparent;min-height:40px;font-size:14px;color:var(--muted);padding:0 6px}
+.subtabs button[aria-selected=true]{background:var(--brand);color:#fff}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:2px;background:var(--input);min-width:0}
+.kpi span{font-size:12.5px;color:var(--muted)}.kpi b{font:700 18px var(--display);color:var(--fg);overflow-wrap:anywhere}.kpi small{font-size:12px;color:var(--muted)}
+.kpi.main{grid-column:1/-1;background:color-mix(in srgb,var(--brand) 10%,var(--card))}.kpi.main b{font-size:24px;color:var(--brand-deep)}
+.kpi.ok b{color:var(--ok)}.kpi.bad b{color:var(--warn)}.kpi.warn{border-color:#e0b04a}
+.chart{display:flex;gap:6px;align-items:flex-end;height:150px;padding-top:6px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+.chart .bars{flex:1;width:100%;display:flex;gap:2px;align-items:flex-end;justify-content:center}
+.chart .bars i{width:30%;max-width:14px;min-height:1px;border-radius:3px 3px 0 0}
+.chart span{font-size:11.5px;color:var(--muted)}
+.b-ca{background:var(--brand)}.b-enc{background:var(--ok)}.b-dep{background:#e0773a}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin-top:8px;flex-wrap:wrap}.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.catrow{display:grid;grid-template-columns:minmax(0,1.3fr) 1fr auto;gap:8px;align-items:center;font-size:14px;padding:3px 0}
+.catbar{height:8px;background:var(--input);border-radius:4px;overflow:hidden}.catbar i{display:block;height:100%;background:#e0773a}
+.paysum{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:14px}
+.paylist{display:flex;flex-direction:column;gap:4px;font-size:14px}.paylist>div{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed var(--line);padding:2px 0}
+.paylist button{min-height:32px;padding:0 8px}
+.payform{margin-top:6px}
+.hitem details summary{cursor:pointer;color:var(--brand-deep);font-weight:600;font-size:14px;padding:4px 0}
+.hitem .pp{display:flex;flex-direction:column;gap:8px;padding-top:6px}
+.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
+.deprow{display:flex;gap:10px;align-items:flex-start}
+.photo-row{display:flex;gap:10px;align-items:center}
+.filebtn{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px dashed var(--brand);border-radius:9px;color:var(--brand-deep);font-weight:600;cursor:pointer;flex-direction:row}
+.lightbox{position:fixed;inset:0;z-index:50;background:rgba(10,20,35,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
+.lightbox img{max-width:100%;max-height:80vh;border-radius:6px}
 .badge.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
 .hitem{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 .pv{display:flex;flex-direction:column;gap:12px;align-items:center}
@@ -96,6 +127,7 @@ textarea{resize:vertical;min-height:70px}
   <button data-tab="rapport" role="tab" aria-selected="true">Essai</button>
   <button data-tab="devis" role="tab">Devis</button>
   <button data-tab="facture" role="tab">Facture</button>
+  <button data-tab="fin" role="tab">Finances</button>
   <button data-tab="hist" role="tab">Historique</button>
   <button data-tab="set" role="tab">Réglages</button>
 </div></nav>
@@ -134,6 +166,31 @@ textarea{resize:vertical;min-height:70px}
 <main class="wrap" id="tab-doc" hidden>
   <h1 id="docTitle" class="sr-only">Devis</h1>
   <div id="docForm" style="display:flex;flex-direction:column;gap:16px"></div>
+</main>
+<main class="wrap" id="tab-fin" hidden>
+  <div class="subtabs" id="finSub" role="tablist"><button data-sub="tdb" role="tab">Tableau de bord</button><button data-sub="enc" role="tab">À encaisser</button><button data-sub="dep" role="tab">Dépenses</button></div>
+  <section class="sheet" id="finPerBox"><div class="grid">
+    <label>Période<select id="finPer"><option value="mois">Mois</option><option value="annee">Année</option><option value="tout">Tout</option></select></label>
+    <label id="finMonthLbl">Mois<input type="month" id="finMonth"></label></div></section>
+  <p id="finStatus" class="hint" role="status" style="margin:0"></p>
+  <div id="finTdb" style="display:flex;flex-direction:column;gap:16px">
+    <section class="sheet"><h2>Chiffres de la période</h2><div class="kpis" id="tdbKpi"></div></section>
+    <section class="sheet"><h2>À suivre</h2><div class="kpis" id="tdbAlert"></div></section>
+    <section class="sheet"><h2>6 derniers mois</h2><div id="tdbChart"></div></section>
+    <section class="sheet"><h2>Dépenses par catégorie</h2><div id="tdbCats"></div></section>
+  </div>
+  <div id="finEnc" hidden style="display:flex;flex-direction:column;gap:12px">
+    <section class="sheet"><h2>Reste à encaisser : <span id="encTot"></span></h2>
+      <label class="check"><input type="checkbox" id="encAll"> Afficher aussi les factures payées</label>
+      <p class="hint" style="margin:0">Touche « Paiements et relance » pour noter un paiement (acompte, solde) ou envoyer un rappel WhatsApp.</p></section>
+    <div id="encList" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+  <div id="finDep" hidden style="display:flex;flex-direction:column;gap:12px">
+    <section class="sheet"><h2>Dépenses de la période : <span id="depTot"></span></h2>
+      <button type="button" class="primary" id="depAdd">+ Nouvelle dépense</button></section>
+    <section class="sheet" id="depForm" hidden></section>
+    <div id="depList" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
 </main>
 <main class="wrap" id="tab-hist" hidden>
   <section class="sheet"><h2>Historique</h2>
@@ -634,8 +691,9 @@ function showTab(t){
   TAB=t;
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t?'true':'false'));
   $('tab-rapport').hidden=t!=='rapport';$('tab-doc').hidden=!(t==='devis'||t==='facture');
-  $('tab-hist').hidden=t!=='hist';$('tab-set').hidden=t!=='set';
-  document.querySelector('.bar').hidden=(t==='hist'||t==='set');
+  $('tab-hist').hidden=t!=='hist';$('tab-set').hidden=t!=='set';$('tab-fin').hidden=t!=='fin';
+  document.querySelector('.bar').hidden=(t==='hist'||t==='set'||t==='fin');
+  if(t==='fin')renderFin();
   if(t==='devis'||t==='facture'){if(!DB.cur[t])DB.cur[t]=newDoc(t);renderDoc()}
   if(t==='hist')renderHist();
   if(t==='set')renderSet();
@@ -678,6 +736,7 @@ function renderDoc(){
     <div id="totBox" class="totbox"></div>
     <label class="full">Conditions / mentions<textarea data-f="cond" rows="3">${esc(doc.cond)}</textarea></label>
   </section>
+  ${isF?'<section class="sheet" id="docPay"></section>':''}
   <section class="sheet"><h2>Actions</h2>
     <div class="row">
       <button type="button" class="primary" id="docSave">Enregistrer</button>
@@ -703,12 +762,12 @@ function renderDoc(){
   });
   $('addLigne').onclick=()=>{doc.lignes.push({des:'',qte:'1',u:'u',pu:'',tva:S.tva});saveD();renderLignes();
     const l=$('lignes').lastElementChild;l&&l.querySelector('input').focus()};
-  $('docSave').onclick=()=>{saveToHist(doc);docStatus('Enregistré : '+TYPELBL[doc.type]+' '+doc.num,'ok')};
+  $('docSave').onclick=()=>{saveToHist(doc);docStatus('Enregistré : '+TYPELBL[doc.type]+' '+doc.num,'ok');if(isF)renderDocPay(doc)};
   $('docNew').onclick=function(){
     if(!this.dataset.armed&&!doc.saved&&doc.lignes.some(l=>l.des||l.pu)){this.dataset.armed='1';this.textContent='Non enregistré : touchez encore';setTimeout(()=>{if(this.isConnected){delete this.dataset.armed;this.textContent='Nouveau '+(isF?'facture':'devis')}},4000);return}
     DB.cur[doc.type]=newDoc(doc.type);saveD();renderDoc()};
   if(!isF)$('docToFac').onclick=()=>{if(!doc.saved)saveToHist(doc);devisToFacture(doc)};
-  renderLignes();renderTot();
+  renderLignes();renderTot();if(isF)renderDocPay(doc);
 }
 function renderLignes(){
   const doc=DB.cur[TAB],box=$('lignes');box.textContent='';
@@ -754,7 +813,7 @@ function devisToFacture(dv){
 function saveToHist(doc){
   doc.saved=true;const t=totals(doc);
   const snap={id:doc.id,type:doc.type,num:doc.num,date:doc.date,client:{...doc.client},ttc:t.ttc,objet:doc.objet,data:JSON.parse(JSON.stringify(doc)),at:Date.now()};
-  const i=DB.hist.findIndex(h=>h.id===doc.id);if(i>=0){['statut','facture','facId'].forEach(k=>{if(DB.hist[i][k]!==undefined)snap[k]=DB.hist[i][k]});DB.hist[i]=snap}else DB.hist.push(snap);
+  const i=DB.hist.findIndex(h=>h.id===doc.id);if(i>=0){['statut','facture','facId','paiements'].forEach(k=>{if(DB.hist[i][k]!==undefined)snap[k]=DB.hist[i][k]});DB.hist[i]=snap}else DB.hist.push(snap);
   doc.lignes.forEach(l=>{if(l.des&&l.pu)DB.cat[l.des]={pu:l.pu,u:l.u,tva:l.tva}});
   saveD();
 }
@@ -768,7 +827,7 @@ function renderHist(){
   items.forEach(h=>{
     const d=document.createElement('div');d.className='hitem';
     d.innerHTML=`<div><b>${esc(TYPELBL[h.type])} ${esc(h.num||'')}</b><span class="hint"> · ${esc(frDate(h.date))}</span><br>${esc((h.client&&h.client.nom)||'—')}${h.type!=='rapport'?` · <b>${money(h.ttc||0)} DT</b>`:''}</div>
-      ${h.type==='devis'?(h.statut==='accepte'?`<span class="badge ok">✓ Accepté${h.facture?' → '+esc(h.facture):''}</span>`:'<span class="badge">En attente</span>'):''}
+      ${h.type==='facture'?payBadge(h):''}${h.type==='devis'?(h.statut==='accepte'?`<span class="badge ok">✓ Accepté${h.facture?' → '+esc(h.facture):''}</span>`:'<span class="badge">En attente</span>'):''}
       <div class="row">${h.type==='devis'?`<button type="button" class="primary" data-a="fac">${h.statut==='accepte'?'Refacturer':'Client d’accord → Facture'}</button>`:''}<button type="button" class="ghost" data-a="open">Ouvrir</button><button type="button" class="ghost" data-a="dup">Dupliquer</button><button type="button" class="ghost danger" data-a="del">Suppr.</button></div>`;
     d.querySelector('[data-a=open]').onclick=()=>{
       if(h.type==='rapport'){state=JSON.parse(JSON.stringify(h.data));save();bindTop();renderForages();showTab('rapport');return}
@@ -804,13 +863,14 @@ function renderSet(){
   document.querySelectorAll('#tab-set [data-s]').forEach(el=>{const k=el.dataset.s;el.value=S[k]??'';el.oninput=()=>{S[k]=el.value;saveS()}});
 }
 $('exportBtn').onclick=async()=>{
-  const data=JSON.stringify({v:1,settings:S,docs:DB,rapport:state},null,1);
+  const photos={};try{for(const k of await PH.keys())photos[k]=await PH.get(k)}catch(e){}
+  const data=JSON.stringify({v:2,settings:S,docs:DB,rapport:state,photos});
   const name='Sauvegarde_SBS_'+today()+'.json';
   await shareFile(new Blob([data],{type:'application/json'}),name,m=>{$('setStatus').textContent=m});
 };
 $('importFile').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
-  try{const x=JSON.parse(await f.text());if(x.settings)S=Object.assign({...SET_DEF},x.settings);if(x.docs&&Array.isArray(x.docs.hist))DB=x.docs;if(x.rapport&&x.rapport.forages)state=x.rapport;
+  try{const x=JSON.parse(await f.text());if(x.settings)S=Object.assign({...SET_DEF},x.settings);if(x.docs&&Array.isArray(x.docs.hist))DB=x.docs;if(x.rapport&&x.rapport.forages)state=x.rapport;if(!Array.isArray(DB.dep))DB.dep=[];if(x.photos)for(const k in x.photos){try{await PH.set(k,x.photos[k])}catch(e){}}
     saveS();saveD();save();bindTop();renderForages();renderSet();$('setStatus').textContent='Sauvegarde importée : '+DB.hist.length+' document(s).'}
   catch(err){$('setStatus').textContent='Fichier invalide.'}
   e.target.value='';
@@ -926,6 +986,211 @@ async function docSend(){
   try{saveToHist(doc);const bytes=await buildDocPdf(doc);await shareFile(new Blob([bytes],{type:'application/pdf'}),docFileName(doc),(m,c)=>docStatus(m,c))}
   catch(e){console.error(e);docStatus('Impossible de créer le PDF : '+e.message,'err')}finally{setBusy(false)}
 }
+
+/* ================= Finances : paiements, dépenses, tableau de bord ================= */
+if(!Array.isArray(DB.dep))DB.dep=[];
+const DEPCATS=['Achat matériel / pièces','Carburant / transport','Sous-traitance','Salaire / avance technicien','Outillage','Loyer / charges','Téléphone / internet','Impôts / taxes','Autre'];
+const MODES=['Espèces','Chèque','Virement','Traite','Autre'];
+const MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+// ---- photos des dépenses (IndexedDB : plus de place que localStorage)
+const PH=(()=>{let dbp;
+  const open=()=>dbp||(dbp=new Promise((res,rej)=>{const r=indexedDB.open('sbs-photos',1);r.onupgradeneeded=()=>r.result.createObjectStore('p');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}));
+  const op=async(mode,fn)=>{const db=await open();return new Promise((res,rej)=>{const tx=db.transaction('p',mode),rq=fn(tx.objectStore('p'));tx.oncomplete=()=>res(rq&&rq.result);tx.onerror=()=>rej(tx.error)})};
+  return {get:k=>op('readonly',s=>s.get(k)),set:(k,v)=>op('readwrite',s=>s.put(v,k)),del:k=>op('readwrite',s=>s.delete(k)),
+    keys:()=>op('readonly',s=>s.getAllKeys())};
+})();
+async function compressImage(file,max=1400,q=.6){
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+    const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');
+    c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    return c.toDataURL('image/jpeg',q)}finally{URL.revokeObjectURL(url)}
+}
+function showPhoto(src){
+  const o=document.createElement('div');o.className='lightbox';o.innerHTML='<img alt="Justificatif"><button type="button" class="primary">Fermer</button>';
+  o.querySelector('img').src=src;o.onclick=()=>o.remove();document.body.appendChild(o);
+}
+
+// ---- paiements des factures
+function payInfo(h){
+  const paid=(h.paiements||[]).reduce((a,p)=>a+n3(p.montant),0);
+  const reste=Math.max(0,Math.round((n3(h.ttc)-paid)*1000)/1000);
+  const st=reste<=0.0005?'payee':paid>0.0005?'partielle':'impayee';
+  const ech=(h.data&&h.data.echeance)||'';
+  const late=st!=='payee'&&!!ech&&ech<today();
+  const days=late?Math.round((new Date(today())-new Date(ech))/864e5):0;
+  return {paid,reste,st,late,days,ech};
+}
+function payBadge(h){
+  const p=payInfo(h);
+  if(p.st==='payee')return '<span class="badge ok">✓ Payée</span>';
+  if(p.late)return `<span class="badge bad">En retard ${p.days} j · reste ${money(p.reste)} DT</span>`;
+  if(p.st==='partielle')return `<span class="badge warn">Partielle · reste ${money(p.reste)} DT</span>`;
+  return '<span class="badge">Impayée</span>';
+}
+function waNumber(t){let d=String(t||'').replace(/\D/g,'');if(d.startsWith('00'))d=d.slice(2);if(d.length===8)d='216'+d;return d}
+function relance(h){
+  const p=payInfo(h),c=h.client||{};
+  const msg=`Bonjour${c.nom?' '+c.nom:''},\nSauf erreur de notre part, la facture n° ${h.num} du ${frDate(h.date)} d’un montant de ${money(h.ttc)} DT reste à régler`+(p.paid>0?` (déjà réglé : ${money(p.paid)} DT, reste dû : ${money(p.reste)} DT)`:'')+`.\nMerci de bien vouloir procéder au paiement.\nCordialement,\nSlah Bel Haj Salah – +216 53 691 032`;
+  const n=waNumber(c.tel);
+  window.open('https://wa.me/'+(n||'')+'?text='+encodeURIComponent(msg),'_blank');
+}
+// formulaire de paiement + liste, dans un conteneur
+function payPanel(h,box,onChange){
+  const p=payInfo(h);
+  box.innerHTML=`
+    <div class="paysum"><span>Total TTC <b>${money(h.ttc)} DT</b></span><span>Payé <b>${money(p.paid)} DT</b></span><span>Reste <b>${money(p.reste)} DT</b></span></div>
+    ${(h.paiements||[]).length?`<div class="paylist">${h.paiements.map(x=>`<div><span>${esc(frDate(x.date))} · ${esc(x.mode)}${x.note?' · '+esc(x.note):''}</span><span><b>${money(n3(x.montant))} DT</b> <button type="button" class="ghost danger" data-del="${x.id}" aria-label="Supprimer le paiement">✕</button></span></div>`).join('')}</div>`:''}
+    ${p.st!=='payee'?`<div class="grid payform">
+      <label>Date<input type="date" data-p="date" value="${today()}"></label>
+      <label>Montant<span class="unit"><input data-p="montant" inputmode="decimal" value="${String(p.reste).replace('.',',')}"><span>DT</span></span></label>
+      <label>Mode<select data-p="mode">${MODES.map(m=>`<option>${m}</option>`).join('')}</select></label>
+      <label>Note<input data-p="note" placeholder="ex. acompte, n° chèque"></label>
+      <button type="button" class="primary full" data-act="addpay">+ Enregistrer ce paiement</button>
+    </div>`:''}
+    <div class="row">${p.st!=='payee'?'<button type="button" data-act="wa">Relancer par WhatsApp</button>':''}</div>`;
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Suppr. ?';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='✕'}},3000);return}
+    h.paiements=h.paiements.filter(x=>x.id!==b.dataset.del);saveD();onChange&&onChange()});
+  const add=box.querySelector('[data-act=addpay]');
+  if(add)add.onclick=()=>{
+    const g=k=>box.querySelector('[data-p='+k+']').value;
+    const m=n3(g('montant'));if(!(m>0)){box.querySelector('[data-p=montant]').focus();return}
+    (h.paiements=h.paiements||[]).push({id:uid(),date:g('date')||today(),montant:String(Math.round(m*1000)/1000),mode:g('mode'),note:g('note').trim()});
+    saveD();onChange&&onChange()};
+  const wa=box.querySelector('[data-act=wa]');if(wa)wa.onclick=()=>relance(h);
+}
+// section « Paiements » dans l’onglet Facture
+function renderDocPay(doc){
+  const sec=$('docPay');if(!sec)return;
+  const h=DB.hist.find(x=>x.id===doc.id);
+  if(!h){sec.innerHTML='<h2>Paiements</h2><p class="hint">Enregistre la facture pour suivre ses paiements.</p>';return}
+  sec.innerHTML='<h2>Paiements '+payBadge(h)+'</h2><div></div>';
+  payPanel(h,sec.lastElementChild,()=>renderDocPay(doc));
+}
+
+// ---- période
+function periodRange(){
+  const t=$('finPer').value,m=$('finMonth').value||today().slice(0,7),y=m.slice(0,4);
+  if(t==='mois'){const [yy,mm]=m.split('-').map(Number);const e=new Date(Date.UTC(yy,mm,1)).toISOString().slice(0,10);return {from:m+'-01',to:e,label:MOIS[mm-1]+' '+yy}}
+  if(t==='annee')return {from:y+'-01-01',to:(+y+1)+'-01-01',label:'Année '+y};
+  return {from:'0000',to:'9999',label:'Depuis le début'};
+}
+const inP=(d,r)=>!!d&&d>=r.from&&d<r.to;
+function factures(){return DB.hist.filter(h=>h.type==='facture')}
+function stats(r){
+  let caTTC=0,caHT=0,tva=0,enc=0,dep=0;const cats={};
+  factures().forEach(h=>{if(inP(h.date,r)){const t=totals(h.data);caTTC+=t.ttc;caHT+=t.net;tva+=t.tva}
+    (h.paiements||[]).forEach(p=>{if(inP(p.date,r))enc+=n3(p.montant)})});
+  DB.dep.forEach(d=>{if(inP(d.date,r)){dep+=n3(d.montant);cats[d.cat]=(cats[d.cat]||0)+n3(d.montant)}});
+  return {caTTC,caHT,tva,enc,dep,cats,res:caHT-dep,treso:enc-dep};
+}
+
+// ---- rendu de l’onglet Finances
+let FINSUB='tdb';
+function renderFin(){
+  document.querySelectorAll('#finSub button').forEach(b=>b.setAttribute('aria-selected',b.dataset.sub===FINSUB?'true':'false'));
+  $('finTdb').hidden=FINSUB!=='tdb';$('finEnc').hidden=FINSUB!=='enc';$('finDep').hidden=FINSUB!=='dep';
+  $('finMonthLbl').hidden=$('finPer').value!=='mois';
+  $('finPerBox').hidden=FINSUB==='enc';
+  if(FINSUB==='tdb')renderTdb();if(FINSUB==='enc')renderEnc();if(FINSUB==='dep')renderDep();
+}
+function kpi(lbl,val,cls,sub){return `<div class="kpi ${cls||''}"><span>${lbl}</span><b>${val}</b>${sub?`<small>${sub}</small>`:''}</div>`}
+function renderTdb(){
+  const r=periodRange(),s=stats(r);
+  const open=factures().map(h=>({h,p:payInfo(h)})).filter(x=>x.p.st!=='payee');
+  const reste=open.reduce((a,x)=>a+x.p.reste,0),late=open.filter(x=>x.p.late);
+  const dv=DB.hist.filter(h=>h.type==='devis'&&h.statut!=='accepte');
+  $('tdbKpi').innerHTML=
+    kpi('Chiffre d’affaires HT',money(s.caHT)+' DT','main','TTC '+money(s.caTTC)+' DT')+
+    kpi('Encaissé',money(s.enc)+' DT','ok')+
+    kpi('Dépenses',money(s.dep)+' DT','bad')+
+    kpi('Résultat estimé',money(s.res)+' DT',s.res>=0?'ok':'bad','CA HT − dépenses')+
+    kpi('Trésorerie de la période',money(s.treso)+' DT',s.treso>=0?'':'bad','encaissé − dépenses')+
+    kpi('TVA collectée',money(s.tva)+' DT','','sur les factures de la période');
+  $('tdbAlert').innerHTML=
+    `<div class="kpi ${reste>0?'warn':''}"><span>Reste à encaisser (toutes factures)</span><b>${money(reste)} DT</b><small>${open.length} facture(s)${late.length?' · <b style="color:var(--warn)">'+late.length+' en retard</b>':''}</small></div>`+
+    `<div class="kpi"><span>Devis en attente de réponse</span><b>${dv.length}</b><small>${money(dv.reduce((a,h)=>a+n3(h.ttc),0))} DT TTC</small></div>`;
+  // graphique 6 derniers mois
+  const now=new Date(),months=[];
+  for(let i=5;i>=0;i--){const d=new Date(Date.UTC(now.getFullYear(),now.getMonth()-i,1)),m=d.toISOString().slice(0,7),e=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)).toISOString().slice(0,10);
+    const st=stats({from:m+'-01',to:e});months.push({l:MOIS[d.getUTCMonth()],ca:st.caHT,enc:st.enc,dep:st.dep})}
+  const max=Math.max(1,...months.flatMap(m=>[m.ca,m.enc,m.dep]));
+  $('tdbChart').innerHTML=`<div class="chart">${months.map(m=>`<div class="col" title="${m.l} : CA ${money(m.ca)} · encaissé ${money(m.enc)} · dépenses ${money(m.dep)}"><div class="bars">
+    <i class="b-ca" style="height:${m.ca/max*100}%"></i><i class="b-enc" style="height:${m.enc/max*100}%"></i><i class="b-dep" style="height:${m.dep/max*100}%"></i></div><span>${m.l}</span></div>`).join('')}</div>
+    <div class="legend"><span><i class="b-ca"></i>CA HT</span><span><i class="b-enc"></i>Encaissé</span><span><i class="b-dep"></i>Dépenses</span></div>`;
+  const cats=Object.entries(s.cats).sort((a,b)=>b[1]-a[1]);
+  $('tdbCats').innerHTML=cats.length?cats.map(([c,v])=>`<div class="catrow"><span>${esc(c)}</span><span class="catbar"><i style="width:${v/s.dep*100}%"></i></span><b>${money(v)}</b></div>`).join(''):'<p class="hint">Aucune dépense sur la période.</p>';
+}
+function renderEnc(){
+  const box=$('encList');box.textContent='';
+  const items=factures().map(h=>({h,p:payInfo(h)})).filter(x=>$('encAll').checked||x.p.st!=='payee')
+    .sort((a,b)=>(b.p.late-a.p.late)||(b.p.days-a.p.days)||((a.h.date||'').localeCompare(b.h.date||'')));
+  $('encTot').textContent=money(items.filter(x=>x.p.st!=='payee').reduce((a,x)=>a+x.p.reste,0))+' DT';
+  if(!items.length){box.innerHTML='<p class="hint">Aucune facture à encaisser. 👍</p>';return}
+  items.forEach(({h})=>{
+    const d=document.createElement('div');d.className='hitem';
+    const draw=()=>{d.innerHTML=`<div><b>Facture ${esc(h.num)}</b><span class="hint"> · ${esc(frDate(h.date))}${h.data&&h.data.echeance?' · échéance '+esc(frDate(h.data.echeance)):''}</span><br>${esc((h.client&&h.client.nom)||'—')}</div>${payBadge(h)}
+      <details><summary>Paiements et relance</summary><div class="pp"></div></details>`;
+      payPanel(h,d.querySelector('.pp'),()=>{draw();d.querySelector('details').open=true;$('encTot').textContent=money(factures().map(payInfo).filter(p=>p.st!=='payee').reduce((a,p)=>a+p.reste,0))+' DT'})};
+    draw();box.appendChild(d);
+  });
+}
+// ---- dépenses
+let depEdit=null;
+function depForm(dp){
+  depEdit=dp||{id:uid(),date:today(),montant:'',cat:DEPCATS[0],fournisseur:'',note:'',photo:false,isNew:true};
+  const e=depEdit;
+  $('depForm').hidden=false;
+  $('depForm').innerHTML=`<h2>${e.isNew?'Nouvelle dépense':'Modifier la dépense'}</h2>
+   <div class="grid">
+    <label>Date<input type="date" data-d="date" value="${esc(e.date)}"></label>
+    <label>Montant TTC<span class="unit"><input data-d="montant" inputmode="decimal" value="${esc(String(e.montant).replace('.',','))}"><span>DT</span></span></label>
+    <label class="full">Catégorie<select data-d="cat">${DEPCATS.map(c=>`<option${c===e.cat?' selected':''}>${esc(c)}</option>`).join('')}</select></label>
+    <label class="full">Fournisseur / bénéficiaire<input data-d="fournisseur" value="${esc(e.fournisseur)}" list="dlFour"></label>
+    <label class="full">Note<input data-d="note" value="${esc(e.note)}" placeholder="ex. câble 4×6 chantier Agareb"></label>
+    <div class="full photo-row"><label class="filebtn">📷 ${e.photo?'Changer la photo':'Photo du ticket / facture'}<input type="file" accept="image/*" capture="environment" hidden id="depPhoto"></label><span id="depThumb"></span></div>
+    <div class="full row"><button type="button" class="primary" id="depSave">Enregistrer la dépense</button><button type="button" id="depCancel">Annuler</button></div>
+   </div>
+   <datalist id="dlFour">${[...new Set(DB.dep.map(d=>d.fournisseur).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
+  let newPhoto=null;
+  const thumb=src=>{$('depThumb').innerHTML=src?`<img src="${src}" class="thumb" alt="Justificatif">`:'';const im=$('depThumb').querySelector('img');if(im)im.onclick=()=>showPhoto(src)};
+  if(e.photo)PH.get(e.id).then(s=>thumb(s));
+  $('depPhoto').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;$('depThumb').textContent='Compression…';newPhoto=await compressImage(f);thumb(newPhoto)};
+  $('depCancel').onclick=()=>{$('depForm').hidden=true;depEdit=null};
+  $('depSave').onclick=async()=>{
+    const g=k=>$('depForm').querySelector('[data-d='+k+']').value;
+    const m=n3(g('montant'));if(!(m>0)){$('depForm').querySelector('[data-d=montant]').focus();return}
+    Object.assign(e,{date:g('date')||today(),montant:String(Math.round(m*1000)/1000),cat:g('cat'),fournisseur:g('fournisseur').trim(),note:g('note').trim()});
+    if(newPhoto){try{await PH.set(e.id,newPhoto);e.photo=true}catch(err){$('finStatus').textContent='Photo non enregistrée (mémoire pleine ?)'}}
+    const wasNew=e.isNew;delete e.isNew;if(wasNew)DB.dep.push(e);saveD();
+    $('depForm').hidden=true;depEdit=null;renderDep();$('finStatus').textContent='Dépense enregistrée : '+money(m)+' DT';
+  };
+  $('depForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function renderDep(){
+  const r=periodRange(),box=$('depList');box.textContent='';
+  const items=DB.dep.filter(d=>inP(d.date,r)).sort((a,b)=>b.date.localeCompare(a.date));
+  $('depTot').textContent=money(items.reduce((a,d)=>a+n3(d.montant),0))+' DT';
+  if(!items.length){box.innerHTML='<p class="hint">Aucune dépense sur la période.</p>';return}
+  items.forEach(dp=>{
+    const d=document.createElement('div');d.className='hitem dep';
+    d.innerHTML=`<div class="deprow"><span class="tw"></span><div style="flex:1;min-width:0"><b>${money(n3(dp.montant))} DT</b> <span class="hint">· ${esc(frDate(dp.date))}</span><br>${esc(dp.cat)}${dp.fournisseur?' · '+esc(dp.fournisseur):''}${dp.note?'<br><span class="hint">'+esc(dp.note)+'</span>':''}</div></div>
+      <div class="row"><button type="button" class="ghost" data-a="edit">Modifier</button><button type="button" class="ghost danger" data-a="del">Suppr.</button></div>`;
+    if(dp.photo)PH.get(dp.id).then(s=>{if(s){const i=document.createElement('img');i.src=s;i.className='thumb';i.alt='Justificatif';i.onclick=()=>showPhoto(s);d.querySelector('.tw').appendChild(i)}});
+    d.querySelector('[data-a=edit]').onclick=()=>depForm(dp);
+    const del=d.querySelector('[data-a=del]');
+    del.onclick=()=>{if(!del.dataset.armed){del.dataset.armed='1';del.textContent='Confirmer ?';setTimeout(()=>{if(del.isConnected){delete del.dataset.armed;del.textContent='Suppr.'}},3000);return}
+      DB.dep=DB.dep.filter(x=>x!==dp);if(dp.photo)PH.del(dp.id).catch(()=>{});saveD();renderDep()};
+    box.appendChild(d);
+  });
+}
+document.querySelectorAll('#finSub button').forEach(b=>b.onclick=()=>{FINSUB=b.dataset.sub;renderFin()});
+$('finPer').onchange=renderFin;$('finMonth').onchange=renderFin;$('encAll').onchange=renderEnc;
+$('depAdd').onclick=()=>depForm();
+$('finMonth').value=today().slice(0,7);
 
 $('btnPreview').onclick=()=>TAB==='rapport'?rapportPreview():docPreview();
 $('btnSend').onclick=()=>TAB==='rapport'?rapportSend():docSend();
